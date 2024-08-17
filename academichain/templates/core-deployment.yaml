@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-core
+  labels:
+    app: {{ .Chart.Name }}-core
+spec:
+  replicas: {{ .Values.core_service.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-core
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-core
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: {{ .Chart.Name }}-core
+          image: "{{ .Values.core_service.repository }}:{{ .Values.core_service.tag }}"
+          imagePullPolicy: {{ .Values.core_service.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.core_service.service.port }}
+          env:
+            - name: POSTGRESHOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESHOST
+            - name: POSTGRESPORT
+              value: {{ .Values.env.POSTGRESPORT | quote }}
+            - name: POSTGRESUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESUSER
+            - name: POSTGRESPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESPASSWORD
+            - name: POSTGRESDB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESDB
+            - name: USER_SERVICE_URL
+              value: http://academi-user-service:9091
+            - name: ITEM_SERVICE_URL
+              value: http://academi-item-service:9092
+            - name: KEYCLOAK_URL
+              value: http://sever3d.synology.me:7080
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: sever3d.synology.me:8097,sever3d.synology.me:8098,sever3d.synology.me:8099
+            - name: ENCRYPTION_KEY
+              value: vjLFfQoanpJtwu8M2VIAJdJessqw2UKAANdU+Z0t1nI=
+            - name: KEYCLOAK_SECRET
+              value: c40444f1-56ed-47bf-9076-74f51b652088
+            - name: BLOCKCHAIN_API_SECRET
+              value: F+H1l?.{smL)8,q{ryCdhUY[Nd:#LVm6WyR,s+XWW-/Q3=Ng0Mbm'2D093Z<HP
+            - name: BLOCKCHAIN_GATE_URL
+              value: http://sever3d.synology.me:3007
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '200m'
+            limits:
+              memory: '512Mi'
+              cpu: '1000m'
+      initContainers:
+        - name: database-migration
+          image: sever3d/academichain-core-database:latest
+          imagePullPolicy: Always
+          env:
+            - name: POSTGRESHOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESHOST
+            - name: POSTGRESPORT
+              value: {{ .Values.env.POSTGRESPORT | quote }}
+            - name: POSTGRESUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESUSER
+            - name: POSTGRESPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESPASSWORD
+            - name: POSTGRESDB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESDB
+          args:
+            - "--url=jdbc:postgresql://$(POSTGRESHOST):$(POSTGRESPORT)/$(POSTGRESDB)"
+            - "--username=$(POSTGRESUSER)"
+            - "--password=$(POSTGRESPASSWORD)"
+            - "--changeLogFile=changelog/db.changelog-main.yml"
+            - "--liquibaseSchemaName=core"
+            - "update"
+
