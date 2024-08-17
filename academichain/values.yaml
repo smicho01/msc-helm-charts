@@ -27,6 +27,16 @@ items_service:
     port: 9092
   replicas: 1
 
+ui_service:
+  repository: sever3d/academichain-ui
+  pullPolicy: Always
+  tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+  replicas: 1
+  ACADEMICHAIN_ENV: dev
+
 env:
   POSTGRESPORT: 5432
 
