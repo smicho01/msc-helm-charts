@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-core
+  labels:
+    app: {{ .Chart.Name }}-core
+spec:
+  type: {{ .Values.core_service.service.type }}
+  ports:
+    - port: {{ .Values.core_service.service.port }}
+      targetPort: {{ .Values.core_service.service.port }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Chart.Name }}-core
