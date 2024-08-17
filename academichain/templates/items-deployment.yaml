@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}-core
+  name: {{ .Chart.Name }}-items
   labels:
-    app: {{ .Chart.Name }}-core
+    app: {{ .Chart.Name }}-items
 spec:
   replicas: {{ .Values.core_service.replicas }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}-core
+      app: {{ .Chart.Name }}-items
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}-core
+        app: {{ .Chart.Name }}-items
     spec:
       restartPolicy: Always
       containers:
-        - name: {{ .Chart.Name }}-core
-          image: "{{ .Values.core_service.repository }}:{{ .Values.core_service.tag }}"
-          imagePullPolicy: {{ .Values.core_service.pullPolicy }}
+        - name: {{ .Chart.Name }}-items
+          image: "{{ .Values.items_service.repository }}:{{ .Values.items_service.tag }}"
+          imagePullPolicy: {{ .Values.items_service.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.core_service.service.port }}
+            - containerPort: {{ .Values.items_service.service.port }}
           env:
             - name: POSTGRESHOST
               valueFrom:
@@ -44,22 +44,18 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-secret
                   key: POSTGRESDB
+            - name: CORE_SERVICE_URL
+              value: "http://{{ .Chart.Name }}-core:{{ .Values.core_service.service.port }}"
             - name: USER_SERVICE_URL
               value: "http://{{ .Chart.Name }}-users:{{ .Values.users_service.service.port }}"
-            - name: ITEM_SERVICE_URL
-              value: "http://{{ .Chart.Name }}-items:{{ .Values.items_service.service.port }}"
             - name: KEYCLOAK_URL
               value: http://sever3d.synology.me:7080
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: sever3d.synology.me:8097,sever3d.synology.me:8098,sever3d.synology.me:8099
-            - name: ENCRYPTION_KEY
-              value: vjLFfQoanpJtwu8M2VIAJdJessqw2UKAANdU+Z0t1nI=
-            - name: KEYCLOAK_SECRET
-              value: c40444f1-56ed-47bf-9076-74f51b652088
-            - name: BLOCKCHAIN_API_SECRET
-              value: F+H1l?.{smL)8,q{ryCdhUY[Nd:#LVm6WyR,s+XWW-/Q3=Ng0Mbm'2D093Z<HP
-            - name: BLOCKCHAIN_GATE_URL
-              value: http://sever3d.synology.me:3007
+            - name: NLP_SERVICE_URI
+              value: http://semicorp.org:9050
+            - name: NLP_SERVICE_TOKEN
+              value: 2hE#4Wr7EPGappqYeSu&iFZca9nW!tdjfqHzxv#vP^mB
           resources:
             requests:
               memory: '128Mi'
@@ -69,7 +65,7 @@ spec:
               cpu: '1000m'
       initContainers:
         - name: database-migration
-          image: sever3d/academichain-core-database:latest
+          image: sever3d/academichain-item-database:latest
           imagePullPolicy: Always
           env:
             - name: POSTGRESHOST
@@ -99,6 +95,6 @@ spec:
             - "--username=$(POSTGRESUSER)"
             - "--password=$(POSTGRESPASSWORD)"
             - "--changeLogFile=changelog/db.changelog-main.yml"
-            - "--liquibaseSchemaName=core"
+            - "--liquibaseSchemaName=items"
             - "update"
 
