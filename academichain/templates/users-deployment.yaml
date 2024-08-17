@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-users
+  labels:
+    app: {{ .Chart.Name }}-users
+spec:
+  replicas: {{ .Values.core_service.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-users
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-users
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: {{ .Chart.Name }}-users
+          image: "{{ .Values.users_service.repository }}:{{ .Values.users_service.tag }}"
+          imagePullPolicy: {{ .Values.users_service.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.users_service.service.port }}
+          env:
+            - name: POSTGRESHOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESHOST
+            - name: POSTGRESPORT
+              value: {{ .Values.env.POSTGRESPORT | quote }}
+            - name: POSTGRESUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESUSER
+            - name: POSTGRESPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESPASSWORD
+            - name: POSTGRESDB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESDB
+            - name: CORE_SERVICE_URL
+              value: "http://{{ .Chart.Name }}-core:{{ .Values.core_service.service.port }}"
+            - name: ITEM_SERVICE_URL
+              value: "http://{{ .Chart.Name }}-items:{{ .Values.items_service.service.port }}"
+            - name: KEYCLOAK_URL
+              value: http://sever3d.synology.me:7080
+            - name: ENCRYPTION_KEY
+              value: vjLFfQoanpJtwu8M2VIAJdJessqw2UKAANdU+Z0t1nI=
+            - name: KEYCLOAK_SECRET
+              value: c40444f1-56ed-47bf-9076-74f51b652088
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '200m'
+            limits:
+              memory: '512Mi'
+              cpu: '1000m'
+      initContainers:
+        - name: database-migration
+          image: sever3d/academichain-user-database:latest
+          imagePullPolicy: Always
+          env:
+            - name: POSTGRESHOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESHOST
+            - name: POSTGRESPORT
+              value: {{ .Values.env.POSTGRESPORT | quote }}
+            - name: POSTGRESUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESUSER
+            - name: POSTGRESPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESPASSWORD
+            - name: POSTGRESDB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: POSTGRESDB
+          args:
+            - "--url=jdbc:postgresql://$(POSTGRESHOST):$(POSTGRESPORT)/$(POSTGRESDB)"
+            - "--username=$(POSTGRESUSER)"
+            - "--password=$(POSTGRESPASSWORD)"
+            - "--changeLogFile=changelog/db.changelog-main.yml"
+            - "--liquibaseSchemaName=users"
+            - "update"
+
