@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ .Chart.Name }}-users
 spec:
-  replicas: {{ .Values.core_service.replicas }}
+  replicas: {{ .Values.users_service.replicas }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}-users
