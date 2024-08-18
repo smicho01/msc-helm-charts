@@ -12,6 +12,16 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name:  {{ .Chart.Name }}-ui
+                name: {{ .Chart.Name }}-ui
                 port:
                   number: 80
+    - host: kibana.semicorp.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana-service  # Replace with the actual Kibana service name
+                port:
+                  number: 5601

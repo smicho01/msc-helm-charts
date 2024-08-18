@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: default  # Adjust the namespace as needed
+data:
+  logstash.conf: |
+    input {
+      # Example: Filebeat input
+      beats {
+        port => 5044
+      }
+    }
+
+    filter {
+      # Add your filters here, for example:
+      # grok, mutate, etc.
+    }
+
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch:9200"]
+        index => "logstash-%{+YYYY.MM.dd}"
+      }
+      stdout { codec => rubydebug }  # Optional, for debugging purposes
+    }
